@@ -1,0 +1,14 @@
+{
+  "generator-ui5-ts-app": {
+    "application": "tsReport",
+    "namespace": "com.ts",
+    "framework": "SAPUI5",
+    "frameworkVersion": "1.90.0",
+    "author": "Tomas Sanchez",
+    "tstypes": "@sapui5/ts-types-esm",
+    "tstypesVersion": "1.90.0",
+    "appId": "com.ts.tsReport",
+    "appURI": "com/ts/tsReport",
+    "setupCompleted": true
+  }
+}
