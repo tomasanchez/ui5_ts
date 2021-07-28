@@ -16,6 +16,7 @@ import JSONModel from "sap/ui/model/json/JSONModel";
 import View from "sap/ui/core/mvc/View";
 //import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import Router from "sap/ui/core/routing/Router";
+import UI5Element from "sap/ui/core/Element";
 
 interface IDictionary {
   [index: string]: any;
@@ -198,4 +199,80 @@ export default class BaseController extends Controller {
       };
     } else _fragments[id].fragment.open();
   }
+
+  /**
+   * Convenince method for closing all opened Fragments.
+   * @function
+   * @public
+   */
+  public closeFragments(): void {
+    /*
+			This makes it easy for a close button in each fragment.
+       It just calls this function and it will close the open fragments. (In case the fragment contains a dialog.)
+		*/
+    for (var f in _fragments) {
+      if (
+        _fragments[f]["fragment"] &&
+        _fragments[f].fragment["isOpen"] &&
+        _fragments[f].fragment.isOpen()
+      ) {
+        _fragments[f].fragment.close();
+      }
+    }
+  }
+
+  /**
+   * Convenince method for getting an specific fragment
+   * @public
+   * @param {string} fragment name
+   */
+  public getFragment(fragment: string): any {
+    return _fragments[this.getView().getId() + "-" + fragment];
+  }
+
+  /**
+   * Convenince method for getting a control from in the fragment
+   * @public
+   * @param {sap.ui.mvc.Controller}
+   * @param {string} id of control
+   * Use example:
+   *	var oButton = this.fragmentById(this.parent,"button0");
+   */
+  public fragmentById(parent: Controller, id: string): UI5Element {
+    var latest = this.getMetadata().getName().split(".")[
+      this.getMetadata().getName().split(".").length - 1
+    ];
+    return sap.ui
+      .getCore()
+      .byId(parent.getView().getId() + "-" + latest + "--" + id);
+  }
+
+  /**
+   * Adds a history entry in the FLP page history
+   * @public
+   * @param {object} oEntry An entry object to add to the hierachy array as expected from the ShellUIService.setHierarchy method
+   * @param {boolean} bReset If true resets the history before the new entry is added
+   */
+  public addHistoryEntry: any = (() => {
+    var aHistoryEntries: any[] = [];
+
+    return (oEntry: any, bReset: boolean) => {
+      if (bReset) {
+        aHistoryEntries = [];
+      }
+
+      var bInHistory = aHistoryEntries.some(function (oHistoryEntry) {
+        return oHistoryEntry.intent === oEntry.intent;
+      });
+
+      if (!bInHistory) {
+        aHistoryEntries.push(oEntry);
+        this.getOwnerComponent()
+          .getService("ShellUIService")
+          .then(function (oService: any) {
+            oService.setHierarchy(aHistoryEntries);
+          });
+      }
+    };
+  })();
 }
