@@ -1,7 +1,8 @@
 /**
  * Base Controller.
  *
- * Common and inheritable methods for all other controllers.
+ * Common and inheritable methods for all other controllers, including: Model methods and shortcuts;
+ * Router, History handling and Navigation; Dialog-fragments management with their own controller.
  *
  * @file This files describes the app Base Controller.
  * @author Tomas A. Sanchez
@@ -17,6 +18,7 @@ import View from "sap/ui/core/mvc/View";
 //import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import Router from "sap/ui/core/routing/Router";
 import UI5Element from "sap/ui/core/Element";
+import Dialog from "sap/m/Dialog";
 
 interface IDictionary {
   [index: string]: any;
@@ -34,6 +36,9 @@ const _fragments = {} as IDictionary;
  * @namespace com.ts.tsReport
  */
 export default class BaseController extends Controller {
+  /* =========================================================== */
+  /* Model Methods                                               */
+  /* =========================================================== */
   /**
    * Convenience method for getting the view model by name in every controller of the application.
    *
@@ -68,6 +73,10 @@ export default class BaseController extends Controller {
   //   return this.getOwnerComponent().getModel("i18n").getResourceBundle();
   // }
 
+  /* =========================================================== */
+  /* Navigation methods                                          */
+  /* =========================================================== */
+
   /**
    * Convenience method for accessing the router in every controller of the application.
    * @public
@@ -81,7 +90,8 @@ export default class BaseController extends Controller {
    * Method for navigation to specific view
    * @public
    * @param {string} psTarget Parameter containing the string for the target navigation
-   * @param {mapping} pmParameters? Parameters for navigation
+   * @param {mapping} pmParameters? optional mapping Parameters for navigation
+   * @param {object} oComponentTargetInfo? optional component target information
    * @param {boolean} pbReplace? Defines if the hash should be replaced (no browser history entry) or set (browser history entry)
    */
   public navTo(
@@ -114,8 +124,12 @@ export default class BaseController extends Controller {
     }
   }
 
+  /* =========================================================== */
+  /* Fragments Handling                                          */
+  /* =========================================================== */
+
   /**
-   * Convenince method for openning a Fragment
+   * Convenince method for openning a Dialog Fragment with a controller.
    * @public
    * @param {string} sName the fragment name
    * @param {sap.ui.mvc.Model} model to be set(optional)
@@ -123,15 +137,13 @@ export default class BaseController extends Controller {
    * @param {function} callbak a function in the controller from where it’s called which can be executed from the fragment controller
    * @param {obejct} data passed from the main view to the fragment
    */
-  public openFragment(
+  public openDialog(
     sName: string,
     model?: Model,
     updateModelAlways?: boolean,
     callback?: () => void,
     data?: object
   ): void {
-    var oController = this;
-
     if (sName.indexOf(".") > 0) {
       var aViewName = sName.split(".");
       sName = sName.substr(sName.lastIndexOf(".") + 1);
@@ -153,50 +165,34 @@ export default class BaseController extends Controller {
     if (!_fragments[id]) {
       //create controller
       var sControllerPath = sViewPath.replace("view", "controller");
-      try {
-        var controller = new Controller(sControllerPath + sName);
-      } catch (ex) {
-        controller = this;
-      }
-      _fragments[id] = {
-        fragment: sap.ui.require(
-          ["sap/ui/core/Fragment"],
-          function (fragmentClass: any) {
-            fragmentClass
-              .load({
-                id: id,
-                name: sViewPath + sName,
-                controller: controller,
-              })
-              .then(function (oFragment: any) {
-                // version >= 1.20.x
-                _fragments[id].fragment = oFragment;
-                oController.getView().addDependent(oFragment);
-                var fragment = oFragment;
 
-                if (model && updateModelAlways) {
-                  fragment.setModel(model);
-                }
-                if (
-                  _fragments[id].controller &&
-                  _fragments[id].controller !== oController
-                ) {
-                  _fragments[id].controller.onBeforeShow(
-                    oController,
-                    fragment,
-                    callback,
-                    data
-                  );
-                }
+      _fragments[id] = { fragment: {}, controller: {} };
 
-                setTimeout(function () {
-                  fragment.open();
-                }, 100);
-              });
-          }
-        ),
-        controller: controller,
-      };
+      Controller.create({ name: sControllerPath + sName })
+        .then((oController: Controller) => {
+          _fragments[id].controller = oController;
+          this.createDialogFragment(
+            id,
+            sViewPath + sName,
+            oController,
+            model,
+            updateModelAlways,
+            callback,
+            data
+          );
+        })
+        .catch((reason: any) => {
+          _fragments[id].controller = this;
+          this.createDialogFragment(
+            id,
+            sViewPath + sName,
+            this,
+            model,
+            updateModelAlways,
+            callback,
+            data
+          );
+        });
     } else _fragments[id].fragment.open();
   }
 
@@ -275,4 +271,67 @@ export default class BaseController extends Controller {
       }
     };
   })();
+
+  /* =========================================================== */
+  /* Private methods                                             */
+  /* =========================================================== */
+
+  /**
+   * Creates a new Dialog.
+   * @private
+   * @param {string} sID the fragment ID
+   * @param {string} name the fragment view-name
+   * @param {sap.ui.mvc.Controller} oController the controller to be set on the fragment
+   * @param {sap.ui.model.Model} model an optional model to be set on the fragment
+   * @param {boolean} updateModelAllways an optional flag for updating the model allways
+   * @param {()=> void} callback an optional callback function
+   * @param {object} data an optional object to be passed as data
+   */
+  private createDialogFragment(
+    sID: string,
+    name: string,
+    oController: Controller,
+    model?: Model,
+    updateModelAllways?: boolean,
+    callback?: () => void,
+    data?: object
+  ): void {
+    _fragments[sID] = {
+      fragment: sap.ui.require(
+        ["sap/ui/core/Fragment"],
+        (fragmentClass: any) => {
+          fragmentClass
+            .load({
+              id: sID,
+              name: name,
+              controller: oController,
+            })
+            .then((oFragment: Dialog) => {
+              // version >= 1.20.x
+              _fragments[sID].fragment = oFragment;
+              this.getView().addDependent(oFragment);
+              var fragment = oFragment;
+
+              _fragments[sID].controller = oController;
+
+              if (model && updateModelAllways) {
+                fragment.setModel(model);
+              }
+              if (oController && oController !== this) {
+                _fragments[sID].controller.onBeforeShow(
+                  oController,
+                  fragment,
+                  callback,
+                  data
+                );
+              }
+
+              setTimeout(function () {
+                fragment.open();
+              }, 100);
+            });
+        }
+      ),
+    };
+  }
 }
