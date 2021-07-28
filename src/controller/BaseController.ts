@@ -17,11 +17,15 @@ import View from "sap/ui/core/mvc/View";
 //import ResourceModel from "sap/ui/model/resource/ResourceModel";
 import Router from "sap/ui/core/routing/Router";
 
+interface IDictionary {
+  [index: string]: any;
+}
+
 /**
  * Global fragments' ID list.
  * @private
  */
-const _fragments: string[] = [];
+const _fragments = {} as IDictionary;
 
 /**
  * The BaseController.
@@ -107,5 +111,91 @@ export default class BaseController extends Controller {
     } else {
       this.getRouter().navTo("appHome", {}, {}, true /*no history*/);
     }
+  }
+
+  /**
+   * Convenince method for openning a Fragment
+   * @public
+   * @param {string} sName the fragment name
+   * @param {sap.ui.mvc.Model} model to be set(optional)
+   * @param {boolean} updateModelAllways let the function know if it has to update the model every time it opens the dialog or only the first time.
+   * @param {function} callbak a function in the controller from where it’s called which can be executed from the fragment controller
+   * @param {obejct} data passed from the main view to the fragment
+   */
+  public openFragment(
+    sName: string,
+    model?: Model,
+    updateModelAlways?: boolean,
+    callback?: () => void,
+    data?: object
+  ): void {
+    var oController = this;
+
+    if (sName.indexOf(".") > 0) {
+      var aViewName = sName.split(".");
+      sName = sName.substr(sName.lastIndexOf(".") + 1);
+    } else {
+      //current folder
+      aViewName = this.getView().getViewName().split("."); // view.login.Login
+    }
+
+    aViewName.pop();
+    var sViewPath = aViewName.join("."); // view.login
+
+    if (sViewPath.toLowerCase().indexOf("fragments") > 0) {
+      sViewPath += ".";
+    } else {
+      sViewPath += ".fragments.";
+    }
+
+    var id: string = this.getView().getId() + "-" + sName;
+    if (!_fragments[id]) {
+      //create controller
+      var sControllerPath = sViewPath.replace("view", "controller");
+      try {
+        var controller = new Controller(sControllerPath + sName);
+      } catch (ex) {
+        controller = this;
+      }
+      _fragments[id] = {
+        fragment: sap.ui.require(
+          ["sap/ui/core/Fragment"],
+          function (fragmentClass: any) {
+            fragmentClass
+              .load({
+                id: id,
+                name: sViewPath + sName,
+                controller: controller,
+              })
+              .then(function (oFragment: any) {
+                // version >= 1.20.x
+                _fragments[id].fragment = oFragment;
+                oController.getView().addDependent(oFragment);
+                var fragment = oFragment;
+
+                if (model && updateModelAlways) {
+                  fragment.setModel(model);
+                }
+                if (
+                  _fragments[id].controller &&
+                  _fragments[id].controller !== oController
+                ) {
+                  _fragments[id].controller.onBeforeShow(
+                    oController,
+                    fragment,
+                    callback,
+                    data
+                  );
+                }
+
+                setTimeout(function () {
+                  fragment.open();
+                }, 100);
+              });
+          }
+        ),
+        controller: controller,
+      };
+    } else _fragments[id].fragment.open();
   }
 }
