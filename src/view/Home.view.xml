@@ -3,18 +3,18 @@
 	displayBlock="true"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc">
-
+    <!-- Page -->
     <MessagePage
         title="{i18n>app_title}"
         text="{i18n>app_title}"
         icon="sap-icon://accept"
         id="page"
         description="{i18n>app_description}">
+        <!-- Buttons Action -->
         <buttons>
             <Button
                 text="{i18n>btn_text}"
-                press="sayHello" />
+                press="onOpenDialog" />
         </buttons>
     </MessagePage>
-
 </mvc:View>

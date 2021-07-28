@@ -8,7 +8,6 @@
  * @since 07.27.2021
  */
 
-import MessageBox from "sap/m/MessageBox";
 import BaseController from "./BaseController";
 
 /**
@@ -18,9 +17,16 @@ export default class HomeController extends BaseController {
   /* =========================================================== */
   /* lifecycle methods                                           */
   /* =========================================================== */
+  /**
+   * Called when the worklist controller is instantiated.
+   * @public
+   */
   public onInit(): void {}
+  /* =========================================================== */
+  /* event handlers                                              */
+  /* =========================================================== */
 
-  public sayHello(): void {
-    MessageBox.show("Hello Robert!");
+  public onOpenDialog(): void {
+    this.openDialog("Fragment");
   }
 }
