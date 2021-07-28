@@ -22,6 +22,7 @@
     "@babel/core": "^7.14.3",
     "@babel/preset-env": "^7.14.2",
     "@babel/preset-typescript": "^7.13.0",
+    "@sapui5/ts-types": "^1.90.3",
     "@sapui5/ts-types-esm": "1.90.0",
     "@types/jquery": "3.5.1",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
