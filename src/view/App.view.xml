@@ -3,11 +3,10 @@
 	displayBlock="true"
 	xmlns="sap.m"
 	xmlns:mvc="sap.ui.core.mvc">
-	
+	<!-- Application Container -->
 	<App
 		id="app"
 		busy="{appView>/busy}"
 		busyIndicatorDelay="{appView>/delay}"> 
 	</App>
-
 </mvc:View>
