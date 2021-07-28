@@ -8,15 +8,23 @@
  * @since 07.28.2021
  */
 
+import Dialog from "sap/m/Dialog";
 import Event from "sap/ui/base/Event";
 import Controller from "sap/ui/core/mvc/Controller";
 import BaseController from "../BaseController";
 
 export default class FragmentController extends BaseController {
-  parent: Controller;
-  fragment: any;
-  data: object;
-  callback: () => void;
+  /* =========================================================== */
+  /* Properties                                                  */
+  /* =========================================================== */
+  // The parent Controller.
+  private parent: Controller;
+  // This fragment's dialog.
+  private fragment: Dialog;
+  // Local data object.
+  private data: object;
+  // Callback function when onClose.
+  private callback: () => void;
   /* =========================================================== */
   /* lifecycle methods */
   /* =========================================================== */
@@ -24,13 +32,18 @@ export default class FragmentController extends BaseController {
   /**
    * Called before the fragment is show.
    * Attachs before open event.
+   *
+   * @param {sap.ui.mvc.Controller} parent the parent view's controller
+   * @param {sap.m.Dialog} fragment the fragment's Dialog control
+   * @param {() => void} callback an optional callback function on close
+   * @param { object } data optional data to be stored
    * @constructor
    */
   public onBeforeShow(
     parent: Controller,
-    fragment: any,
-    callback: () => void,
-    data: object
+    fragment: Dialog,
+    callback?: () => void,
+    data?: object
   ): void {
     this.parent = parent;
 
@@ -44,6 +57,6 @@ export default class FragmentController extends BaseController {
 
   public onClose(oEvent: Event): void {
     this.fragment.close();
-    if (this.callback) this.callback.call(this.parent);
+    this.callback?.call(this.parent);
   }
 }
