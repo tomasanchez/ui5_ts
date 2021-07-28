@@ -13,6 +13,8 @@ import AppComponent from "../Component";
 import BaseController from "./BaseController";
 
 /**
+ * The App frame controller.
+ *
  * @namespace com.ts.tsReport.controller
  */
 export default class AppController extends BaseController {
